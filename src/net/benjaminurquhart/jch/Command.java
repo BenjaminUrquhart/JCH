@@ -37,5 +37,8 @@ public abstract class Command<T> {
 	protected void setHandler(CommandHandler<T> handler){
 		this.handler = handler;
 	}
+	public CommandHandler<T> getHandler(){
+		return handler;
+	}
 	public abstract void handle(GuildMessageReceivedEvent event, T self);
 }

@@ -18,11 +18,14 @@ public class CommandHandler<T> extends ListenerAdapter{
 	
 	@SuppressWarnings("unchecked")
 	public CommandHandler(T self, String prefix, String ownerID, String commandsPackage){
+		if(self == null || prefix == null) {
+			throw new IllegalArgumentException("Self and prefix cannot be null!");
+		}
 		this.self = self;
 		this.prefix = prefix;
 		this.owner = ownerID;
 		this.commands = new HashMap<>();
-		Reflections reflections = new Reflections(commandsPackage);
+		Reflections reflections = commandsPackage == null ? new Reflections() : new Reflections(commandsPackage);
 		reflections.getSubTypesOf(Command.class).forEach((cls) -> {
 			try{
 				this.registerCommand(cls.getDeclaredConstructor().newInstance());
@@ -31,6 +34,12 @@ public class CommandHandler<T> extends ListenerAdapter{
 				e.printStackTrace();
 			}
 		});
+	}
+	public CommandHandler(T self, String prefix, String ownerID) {
+		this(self, prefix, ownerID, null);
+	}
+	public CommandHandler(T self, String prefix) {
+		this(self, prefix, null, null);
 	}
 	public void registerCommand(Command<T> command){
 		command.setHandler(this);
@@ -66,8 +75,11 @@ public class CommandHandler<T> extends ListenerAdapter{
 			}
 			catch(Exception e){
 				event.getChannel().sendMessage("Oh no! Something went wrong while executing that command!\nThis incident has been reported.\n" + e).queue();
+				if(this.owner == null) {
+					this.owner = event.getJDA().asBot().getApplicationInfo().complete().getOwner().getId();
+				}
 				User owner = event.getJDA().getUserById(this.owner);
-				if(!(owner == null)){
+				if(owner != null){
 					owner.openPrivateChannel().queue(
 					(channel) ->{
 						String out = "```" + e.toString();
