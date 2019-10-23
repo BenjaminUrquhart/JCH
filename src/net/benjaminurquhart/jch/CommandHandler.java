@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 
 import org.reflections.Reflections;
 
-import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 
 public class CommandHandler<T> extends ListenerAdapter{
 
@@ -124,7 +124,7 @@ public class CommandHandler<T> extends ListenerAdapter{
 			catch(Exception e){
 				event.getChannel().sendMessage("Oh no! Something went wrong while executing that command!\nThis incident has been reported.\n" + e).queue();
 				if(this.owner == null) {
-					this.owner = event.getJDA().asBot().getApplicationInfo().complete().getOwner().getId();
+					this.owner = event.getJDA().retrieveApplicationInfo().complete().getOwner().getId();
 				}
 				User owner = event.getJDA().getUserById(this.owner);
 				if(owner != null){
