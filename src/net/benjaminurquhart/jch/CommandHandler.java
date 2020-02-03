@@ -84,6 +84,9 @@ public class CommandHandler<T> extends ListenerAdapter{
 	public String getPrefix(){
 		return prefix;
 	}
+	public T getSelf() {
+		return self;
+	}
 	@Override
 	public void onGuildMessageReceived(GuildMessageReceivedEvent event){
 		if(!event.getChannel().canTalk()){
