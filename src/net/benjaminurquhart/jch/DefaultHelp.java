@@ -7,6 +7,10 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 
 public class DefaultHelp<T> extends Command<T> {
 	
+	public DefaultHelp() {
+		super("help");
+	}
+	
 	@Override
 	public void handle(GuildMessageReceivedEvent event, T self) {
 		TextChannel channel = event.getChannel();

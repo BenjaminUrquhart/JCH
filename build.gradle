@@ -1,0 +1,17 @@
+apply plugin: 'java'
+
+repositories {
+    jcenter()
+}
+group = "net.benjaminurquhart"
+
+sourceSets {
+    main.java.srcDirs = ['src']
+    main.resources.srcDirs = ['src/resources']
+}
+dependencies {
+	implementation('net.dv8tion:JDA:4.1.1_122')
+	
+	compile group: 'org.reflections', name: 'reflections', version: '0.9.12'
+}
+

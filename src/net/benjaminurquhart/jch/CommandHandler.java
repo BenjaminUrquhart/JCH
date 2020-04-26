@@ -13,13 +13,16 @@ import java.util.stream.Collectors;
 import org.reflections.Reflections;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 
-public class CommandHandler<T> extends ListenerAdapter{
+public class CommandHandler<T> extends ListenerAdapter {
 
 	private T self;
+	private JDA jda;
 	private String prefix, owner;
+	private boolean mentionPrefix;
 	private Map<String, Command<T>> commands;
 	
 	private Map<String, Future<?>> ratelimits;
@@ -31,14 +34,15 @@ public class CommandHandler<T> extends ListenerAdapter{
 	private DefaultHelp<T> defaultHelpCmd = null;
 	
 	@SuppressWarnings("unchecked")
-	public CommandHandler(T self, String prefix, String ownerID, String commandsPackage){
-		if(self == null || prefix == null) {
-			throw new IllegalArgumentException("Self and prefix cannot be null!");
+	public CommandHandler(T self, String prefix, String ownerID, String commandsPackage) {
+		if(self == null) {
+			throw new IllegalArgumentException("Self cannot be null!");
 		}
 		this.self = self;
 		this.prefix = prefix;
 		this.owner = ownerID;
 		this.commands = new HashMap<>();
+		this.mentionPrefix = prefix == null;
 		Reflections reflections = commandsPackage == null ? new Reflections() : new Reflections(commandsPackage);
 		reflections.getSubTypesOf(Command.class).forEach((cls) -> {
 			try{
@@ -50,14 +54,18 @@ public class CommandHandler<T> extends ListenerAdapter{
 		});
 		this.defaultHelpCmd = new DefaultHelp<T>();
 		this.defaultHelpCmd.setHandler(this);
+		this.registerCommand(this.defaultHelpCmd);
 	}
 	public CommandHandler(T self, String prefix, String ownerID) {
 		this(self, prefix, ownerID, null);
 	}
 	public CommandHandler(T self, String prefix) {
-		this(self, prefix, null, null);
+		this(self, prefix, null);
 	}
-	public void registerCommand(Command<T> command){
+	public CommandHandler(T self) {
+		this(self, null);
+	}
+	public void registerCommand(Command<T> command) {
 		command.setHandler(this);
 		commands.put(command.getName(), command);
 		for(String alias : command.getAliases()) {
@@ -78,22 +86,40 @@ public class CommandHandler<T> extends ListenerAdapter{
 			this.ratelimits = Collections.synchronizedMap(new HashMap<>());
 		}
 	}
-	public List<Command<T>> getRegisteredCommands(){
+	public List<Command<T>> getRegisteredCommands() {
 		return commands.values().stream().distinct().collect(Collectors.toList());
 	}
-	public String getPrefix(){
+	public boolean isMentionPrefix() {
+		return mentionPrefix;
+	}
+	public String getPrefix() {
+		if(mentionPrefix && jda != null) {
+			return "@"+jda.getSelfUser().getName()+" ";
+		}
 		return prefix;
+	}
+	public JDA getJDA() {
+		return jda;
 	}
 	public T getSelf() {
 		return self;
 	}
 	@Override
-	public void onGuildMessageReceived(GuildMessageReceivedEvent event){
-		if(!event.getChannel().canTalk()){
+	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
+		if(jda == null) {
+			jda = event.getJDA();
+		}
+		if(!event.getChannel().canTalk()) {
 			return;
 		}
 		String msg = event.getMessage().getContentRaw().toLowerCase();
-		if(event.getAuthor().isBot() || !msg.startsWith(prefix)){
+		if(mentionPrefix) {
+			if(prefix == null) {
+				prefix = jda.getSelfUser().getId();
+			}
+			msg = msg.replaceFirst("<@!?"+prefix+">", prefix);
+		}
+		if(event.getAuthor().isBot() || !msg.startsWith(prefix)) {
 			return;
 		}
 		String cmd = msg.substring(prefix.length()).trim().toLowerCase();
@@ -104,7 +130,7 @@ public class CommandHandler<T> extends ListenerAdapter{
 		if(command == null && cmd.equals("help")) {
 			command = defaultHelpCmd;
 		}
-		if(command != null){
+		if(command != null) {
 			if(unit != null) {
 				final String id = event.getAuthor().getId();
 				boolean limited = false;
@@ -121,16 +147,16 @@ public class CommandHandler<T> extends ListenerAdapter{
 					return;
 				}
 			}
-			try{
+			try {
 				command.handle(event, self);
 			}
-			catch(Exception e){
+			catch(Exception e) {
 				event.getChannel().sendMessage("Oh no! Something went wrong while executing that command!\nThis incident has been reported.\n" + e).queue();
 				if(this.owner == null) {
-					this.owner = event.getJDA().retrieveApplicationInfo().complete().getOwner().getId();
+					this.owner = jda.retrieveApplicationInfo().complete().getOwner().getId();
 				}
-				User owner = event.getJDA().getUserById(this.owner);
-				if(owner != null){
+				User owner = jda.getUserById(this.owner);
+				if(owner != null) {
 					owner.openPrivateChannel().queue(
 					(channel) ->{
 						String out = "```" + e.toString();
