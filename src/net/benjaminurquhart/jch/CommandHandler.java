@@ -54,7 +54,9 @@ public class CommandHandler<T> extends ListenerAdapter {
 		});
 		this.defaultHelpCmd = new DefaultHelp<T>();
 		this.defaultHelpCmd.setHandler(this);
-		this.registerCommand(this.defaultHelpCmd);
+		if(!this.commands.containsKey("help")) {
+			this.registerCommand(this.defaultHelpCmd);
+		}
 	}
 	public CommandHandler(T self, String prefix, String ownerID) {
 		this(self, prefix, ownerID, null);
