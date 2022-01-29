@@ -1,6 +1,6 @@
 package net.benjaminurquhart.jch;
 
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public abstract class Command<T> {
 
@@ -40,5 +40,5 @@ public abstract class Command<T> {
 	public CommandHandler<T> getHandler(){
 		return handler;
 	}
-	public abstract void handle(GuildMessageReceivedEvent event, T self);
+	public abstract void handle(MessageReceivedEvent event, T self);
 }

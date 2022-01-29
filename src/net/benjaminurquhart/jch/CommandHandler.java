@@ -15,7 +15,7 @@ import org.reflections.Reflections;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class CommandHandler<T> extends ListenerAdapter {
 
@@ -104,11 +104,11 @@ public class CommandHandler<T> extends ListenerAdapter {
 		return self;
 	}
 	@Override
-	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
+	public void onMessageReceived(MessageReceivedEvent event) {
 		if(jda == null) {
 			jda = event.getJDA();
 		}
-		if(!event.getChannel().canTalk()) {
+		if(!event.isFromGuild() || !event.getChannel().canTalk()) {
 			return;
 		}
 		String msg = event.getMessage().getContentRaw().toLowerCase();

@@ -3,7 +3,7 @@ package net.benjaminurquhart.jch;
 import java.util.List;
 
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class DefaultHelp<T> extends Command<T> {
 	
@@ -12,8 +12,8 @@ public class DefaultHelp<T> extends Command<T> {
 	}
 	
 	@Override
-	public void handle(GuildMessageReceivedEvent event, T self) {
-		TextChannel channel = event.getChannel();
+	public void handle(MessageReceivedEvent event, T self) {
+		TextChannel channel = event.getTextChannel();
 		List<Command<T>> commands = this.getHandler().getRegisteredCommands();
 		String out = "```";
 		for(Command<?> command : commands){
