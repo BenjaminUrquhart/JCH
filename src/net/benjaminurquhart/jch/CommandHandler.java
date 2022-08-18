@@ -16,6 +16,8 @@ import org.reflections.Reflections;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.ReadyEvent;
@@ -109,16 +111,18 @@ public class CommandHandler<T> extends ListenerAdapter {
 		return self;
 	}
 	public void synchronizeSlashCommands() {
-		List<Command> registered = jda.retrieveCommands().complete();
-		AbstractCommand<T> existing;
+		System.out.println("Syncing slash command list...");
+		CommandListUpdateAction action = jda.updateCommands();
 		
-		for(Command cmd : registered) {
-			existing = this.commands.get(cmd.getName());
+		AbstractCommand<T> command;
+		for(String cmd : this.commands.keySet()) {
+			command = this.commands.get(cmd);
 			
-			if(existing == null) {
-				jda.deleteCommandById(cmd.getId()).queue();
+			if(command.isSlashCommand()) {
+				action.addCommands(Commands.slash(cmd, command.getDescription()));
 			}
 		}
+		action.queue(list -> System.out.println("Synced " + list.size() + " commands"), e -> e.printStackTrace());
 	}
 	@Override
 	public void onReady(ReadyEvent event) {
