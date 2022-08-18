@@ -10,7 +10,7 @@ sourceSets {
     main.resources.srcDirs = ['src/resources']
 }
 dependencies {
-	implementation('net.dv8tion:JDA:5.0.0-alpha.4')
+	implementation('net.dv8tion:JDA:5.0.0-alpha.17')
 	
 	compile group: 'org.reflections', name: 'reflections', version: '0.9.12'
 }

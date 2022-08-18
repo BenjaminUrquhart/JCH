@@ -3,20 +3,20 @@ package net.benjaminurquhart.jch;
 import java.util.List;
 
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-public class DefaultHelp<T> extends Command<T> {
+@SlashCommand
+public class DefaultHelp<T> extends AbstractCommand<T> {
 	
 	public DefaultHelp() {
 		super("help");
 	}
 	
 	@Override
-	public void handle(MessageReceivedEvent event, T self) {
-		TextChannel channel = event.getTextChannel();
-		List<Command<T>> commands = this.getHandler().getRegisteredCommands();
+	public void handle(CommandEvent event, T self) {
+		TextChannel channel = event.getChannel();
+		List<AbstractCommand<T>> commands = this.getHandler().getRegisteredCommands();
 		String out = "```";
-		for(Command<?> command : commands){
+		for(AbstractCommand<?> command : commands){
 			if(command.hide()){
 				continue;
 			}

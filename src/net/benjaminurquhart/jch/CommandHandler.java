@@ -2,8 +2,10 @@ package net.benjaminurquhart.jch;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -13,8 +15,11 @@ import java.util.stream.Collectors;
 import org.reflections.Reflections;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class CommandHandler<T> extends ListenerAdapter {
@@ -23,7 +28,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 	private JDA jda;
 	private String prefix, owner;
 	private boolean mentionPrefix;
-	private Map<String, Command<T>> commands;
+	private Map<String, AbstractCommand<T>> commands;
 	
 	private Map<String, Future<?>> ratelimits;
 	private TimeUnit unit;
@@ -44,7 +49,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 		this.commands = new HashMap<>();
 		this.mentionPrefix = prefix == null;
 		Reflections reflections = commandsPackage == null ? new Reflections() : new Reflections(commandsPackage);
-		reflections.getSubTypesOf(Command.class).forEach((cls) -> {
+		reflections.getSubTypesOf(AbstractCommand.class).forEach((cls) -> {
 			try{
 				this.registerCommand(cls.getDeclaredConstructor().newInstance());
 			}
@@ -64,7 +69,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 	public CommandHandler(T self) {
 		this(self, null);
 	}
-	public void registerCommand(Command<T> command) {
+	public void registerCommand(AbstractCommand<T> command) {
 		command.setHandler(this);
 		commands.put(command.getName(), command);
 		for(String alias : command.getAliases()) {
@@ -85,7 +90,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 			this.ratelimits = Collections.synchronizedMap(new HashMap<>());
 		}
 	}
-	public List<Command<T>> getRegisteredCommands() {
+	public List<AbstractCommand<T>> getRegisteredCommands() {
 		return commands.values().stream().distinct().collect(Collectors.toList());
 	}
 	public boolean isMentionPrefix() {
@@ -102,6 +107,32 @@ public class CommandHandler<T> extends ListenerAdapter {
 	}
 	public T getSelf() {
 		return self;
+	}
+	public void synchronizeSlashCommands() {
+		List<Command> registered = jda.retrieveCommands().complete();
+		AbstractCommand<T> existing;
+		
+		for(Command cmd : registered) {
+			existing = this.commands.get(cmd.getName());
+			
+			if(existing == null) {
+				jda.deleteCommandById(cmd.getId()).queue();
+			}
+		}
+	}
+	@Override
+	public void onReady(ReadyEvent event) {
+		if(jda == null) {
+			jda = event.getJDA();
+			this.synchronizeSlashCommands();
+		}
+	}
+	@Override
+	public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+		if(jda == null) {
+			jda = event.getJDA();
+		}
+		runCommand(event.getName(), new CommandEvent(event));
 	}
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
@@ -125,13 +156,20 @@ public class CommandHandler<T> extends ListenerAdapter {
 		if(cmd.contains(" ")){
 			cmd = cmd.split(" ")[0];
 		}
-		Command<T> command = commands.get(cmd);
+		runCommand(cmd, new CommandEvent(event));
+	}
+	
+	private void runCommand(String cmd, CommandEvent event) {
+		AbstractCommand<T> command = commands.get(cmd);
 		if(command == null && cmd.equals("help")) {
 			command = defaultHelpCmd;
 		}
 		if(command != null) {
+			if(!command.isUsableInMessage() && !command.isSlashCommand()) {
+				return;
+			}
 			if(unit != null) {
-				final String id = event.getAuthor().getId();
+				final String id = event.getUser().getId();
 				boolean limited = false;
 				if(ratelimits.containsKey(id)) {
 					ratelimits.get(id).cancel(true);
@@ -169,11 +207,10 @@ public class CommandHandler<T> extends ListenerAdapter {
 						(error) ->{
 							event.getChannel().sendMessage("Failed to report the incident!\n" + error).queue();
 						});
-						channel.sendMessage("Command: `" + event.getMessage().getContentRaw() + "`").queue((m) -> {}, (error) -> {});
+						channel.sendMessage("Command: `" + event.getMessageText() + "`").queue((m) -> {}, (error) -> {});
 					});
 				}
 			}
-			return;
 		}
 	}
 }

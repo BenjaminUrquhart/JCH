@@ -1,18 +1,16 @@
 package net.benjaminurquhart.jch;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-
-public abstract class Command<T> {
+public abstract class AbstractCommand<T> {
 
 	private String name;
 	private String[] args;
-	
+
 	private CommandHandler<T> handler;
 	
-	public Command(){
+	public AbstractCommand(){
 		this(null);
 	}
-	public Command(String name, String... args){
+	public AbstractCommand(String name, String... args){
 		if(name == null){
 			name = this.getClass().getSimpleName().toLowerCase();
 		}
@@ -40,5 +38,13 @@ public abstract class Command<T> {
 	public CommandHandler<T> getHandler(){
 		return handler;
 	}
-	public abstract void handle(MessageReceivedEvent event, T self);
+	public boolean isSlashCommand() {
+		return this.getClass().isAnnotationPresent(SlashCommand.class);
+	}
+	public boolean isUsableInMessage() {
+		SlashCommand annotation = this.getClass().getAnnotation(SlashCommand.class);
+		
+		return annotation == null || annotation.value();
+	}
+	public abstract void handle(CommandEvent event, T self);
 }
