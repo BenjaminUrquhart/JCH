@@ -177,7 +177,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 				boolean limited = false;
 				if(ratelimits.containsKey(id)) {
 					ratelimits.get(id).cancel(true);
-					event.getChannel().sendMessage("You are being ratelimited! The ratelimit is set to "+limit+" "+unit.toString().toLowerCase()).queue();
+					event.startReply().addContent("You are being ratelimited! The ratelimit is set to "+limit+" "+unit.toString().toLowerCase()).queue();
 					limited = true;
 				}
 				ratelimits.put(id, limitService.schedule(() -> {
@@ -192,7 +192,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 				command.handle(event, self);
 			}
 			catch(Exception e) {
-				event.getChannel().sendMessage("Oh no! Something went wrong while executing that command!\nThis incident has been reported.\n" + e).queue();
+				event.startReply().addContent("Oh no! Something went wrong while executing that command!\nThis incident has been reported.\n" + e).queue();
 				if(this.owner == null) {
 					this.owner = jda.retrieveApplicationInfo().complete().getOwner().getId();
 				}
@@ -209,7 +209,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 						}
 						channel.sendMessage(out + "```").queue((m) -> {},
 						(error) ->{
-							event.getChannel().sendMessage("Failed to report the incident!\n" + error).queue();
+							event.startReply().addContent("Failed to report the incident!\n" + error).queue();
 						});
 						channel.sendMessage("Command: `" + event.getMessageText() + "`").queue((m) -> {}, (error) -> {});
 					});

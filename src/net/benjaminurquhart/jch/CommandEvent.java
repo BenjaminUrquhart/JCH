@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.internal.requests.restaction.MessageCreateActionImpl;
 
 public class CommandEvent {
 
@@ -18,7 +19,8 @@ public class CommandEvent {
 	
 	private String messageString;
 	
-	private SlashCommandInteractionEvent event;
+	private MessageReceivedEvent msgEvent;
+	private SlashCommandInteractionEvent slashCommandEvent;
 	
 	protected CommandEvent(MessageReceivedEvent event) {
 		this.jda = event.getJDA();
@@ -31,10 +33,12 @@ public class CommandEvent {
 		if(event.isFromGuild()) {
 			this.guild = event.getGuild().getId();
 		}
+		
+		this.msgEvent = event;
 	}
 	
 	protected CommandEvent(SlashCommandInteractionEvent event) {
-		this.event = event;
+		this.slashCommandEvent = event;
 		
 		this.jda = event.getJDA();
 		this.user = event.getUser().getId();
@@ -44,7 +48,7 @@ public class CommandEvent {
 	}
 	
 	public boolean isSlashCommand() {
-		return event != null;
+		return slashCommandEvent != null;
 	}
 	
 	public JDA getJDA() {
@@ -74,7 +78,15 @@ public class CommandEvent {
 		return messageString;
 	}
 	
+	public MessageReceivedEvent getMessageEvent() {
+		return msgEvent;
+	}
+	
 	public SlashCommandInteractionEvent getSlashCommandEvent() {
-		return event;
+		return slashCommandEvent;
+	}
+	
+	public CommandReply startReply() {
+		return new CommandReply(this, this.isSlashCommand() ? slashCommandEvent.deferReply() : new MessageCreateActionImpl(msgEvent.getChannel()));
 	}
 }
