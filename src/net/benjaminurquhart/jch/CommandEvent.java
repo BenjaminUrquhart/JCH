@@ -56,7 +56,11 @@ public class CommandEvent {
 	}
 	
 	public User getUser() {
-		return jda.getUserById(user);
+		User out = jda.getUserById(user);
+		if(out == null) {
+			return jda.retrieveUserById(user).complete();
+		}
+		return out;
 	}
 	
 	public Guild getGuild() {
