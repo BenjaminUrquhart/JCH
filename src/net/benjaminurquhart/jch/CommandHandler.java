@@ -1,5 +1,6 @@
 package net.benjaminurquhart.jch;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,7 +16,6 @@ import java.util.stream.Collectors;
 import org.reflections.Reflections;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.dv8tion.jda.api.JDA;
@@ -23,6 +23,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 public class CommandHandler<T> extends ListenerAdapter {
 
@@ -31,6 +32,8 @@ public class CommandHandler<T> extends ListenerAdapter {
 	private String prefix, owner;
 	private boolean mentionPrefix;
 	private Map<String, AbstractCommand<T>> commands;
+	
+	private Set<CommandData> externalCommands;
 	
 	private Map<String, Future<?>> ratelimits;
 	private TimeUnit unit;
@@ -50,6 +53,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 		this.owner = ownerID;
 		this.commands = new HashMap<>();
 		this.mentionPrefix = prefix == null;
+		this.externalCommands = new HashSet<>();
 		Reflections reflections = commandsPackage == null ? new Reflections() : new Reflections(commandsPackage);
 		reflections.getSubTypesOf(AbstractCommand.class).forEach((cls) -> {
 			try{
@@ -70,6 +74,9 @@ public class CommandHandler<T> extends ListenerAdapter {
 	}
 	public CommandHandler(T self) {
 		this(self, null);
+	}
+	public void addExternalCommands(CommandData... cmds) {
+		externalCommands.addAll(Arrays.asList(cmds));
 	}
 	public void registerCommand(AbstractCommand<T> command) {
 		command.setHandler(this);
@@ -110,8 +117,8 @@ public class CommandHandler<T> extends ListenerAdapter {
 	public T getSelf() {
 		return self;
 	}
-	public void synchronizeSlashCommands() {
-		System.out.println("Syncing slash command list...");
+	public void synchronizeInteractions() {
+		System.out.println("Syncing commands list...");
 		CommandListUpdateAction action = jda.updateCommands();
 		
 		AbstractCommand<T> command;
@@ -122,13 +129,14 @@ public class CommandHandler<T> extends ListenerAdapter {
 				action.addCommands(Commands.slash(cmd, command.getDescription()));
 			}
 		}
-		action.queue(list -> System.out.println("Synced " + list.size() + " commands"), e -> e.printStackTrace());
+		action.addCommands(externalCommands);
+		action.queue(list -> System.out.println("Synced " + (list.size() + externalCommands.size()) + " commands"), e -> e.printStackTrace());
 	}
 	@Override
 	public void onReady(ReadyEvent event) {
 		if(jda == null) {
 			jda = event.getJDA();
-			this.synchronizeSlashCommands();
+			this.synchronizeInteractions();
 		}
 	}
 	@Override
