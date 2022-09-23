@@ -3,8 +3,9 @@ package net.benjaminurquhart.jch;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.internal.requests.restaction.MessageCreateActionImpl;
@@ -21,6 +22,7 @@ public class CommandEvent {
 	
 	private MessageReceivedEvent msgEvent;
 	private SlashCommandInteractionEvent slashCommandEvent;
+	private MessageContextInteractionEvent interactionEvent;
 	
 	protected CommandEvent(MessageReceivedEvent event) {
 		this.jda = event.getJDA();
@@ -47,6 +49,22 @@ public class CommandEvent {
 		this.messageString = event.getCommandPath();
 	}
 	
+	protected CommandEvent(MessageContextInteractionEvent event) {
+		this.interactionEvent = event;
+		
+		this.jda = event.getJDA();
+		this.user = event.getUser().getId();
+		this.guild = event.getGuild().getId();
+		this.channel = event.getChannel().getId();
+		this.message = event.getTarget();
+		
+		this.messageString = event.getTarget().getContentRaw();
+	}
+	
+	public boolean isMessageInteraction() {
+		return interactionEvent != null;
+	}
+	
 	public boolean isSlashCommand() {
 		return slashCommandEvent != null;
 	}
@@ -70,7 +88,7 @@ public class CommandEvent {
 		return jda.getGuildById(guild);
 	}
 	
-	public TextChannel getChannel() {
+	public MessageChannel getChannel() {
 		return jda.getTextChannelById(channel);
 	}
 	
@@ -90,7 +108,19 @@ public class CommandEvent {
 		return slashCommandEvent;
 	}
 	
+	public MessageContextInteractionEvent getInteractionEvent() {
+		return interactionEvent;
+	}
+	
 	public CommandReply startReply() {
-		return new CommandReply(this, this.isSlashCommand() ? slashCommandEvent.deferReply() : new MessageCreateActionImpl(msgEvent.getChannel()));
+		return startReply(false);
+	}
+	
+	public CommandReply startReply(boolean ephemeral) {
+		return new CommandReply(this, 
+				this.isSlashCommand() ? slashCommandEvent.deferReply(ephemeral) : 
+				this.isMessageInteraction() ? interactionEvent.deferReply(ephemeral) :
+				new MessageCreateActionImpl(msgEvent.getChannel())
+		);
 	}
 }

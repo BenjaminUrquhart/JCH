@@ -21,6 +21,7 @@ import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -128,6 +129,9 @@ public class CommandHandler<T> extends ListenerAdapter {
 			if(command.isSlashCommand()) {
 				action.addCommands(Commands.slash(cmd, command.getDescription()));
 			}
+			else if(command.isMessageInteraction()) {
+				action.addCommands(Commands.message(cmd).setGuildOnly(command.getClass().getAnnotation(MessageInteraction.class).value()));
+			}
 		}
 		action.addCommands(externalCommands);
 		action.queue(list -> System.out.println("Synced " + (list.size() + externalCommands.size()) + " commands"), e -> e.printStackTrace());
@@ -141,6 +145,13 @@ public class CommandHandler<T> extends ListenerAdapter {
 	}
 	@Override
 	public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+		if(jda == null) {
+			jda = event.getJDA();
+		}
+		runCommand(event.getName(), new CommandEvent(event));
+	}
+	@Override
+	public void onMessageContextInteraction(MessageContextInteractionEvent event) {
 		if(jda == null) {
 			jda = event.getJDA();
 		}
@@ -177,7 +188,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 			command = defaultHelpCmd;
 		}
 		if(command != null) {
-			if(!command.isUsableInMessage() && !command.isSlashCommand()) {
+			if(!command.isUsableInMessage() && !command.isSlashCommand() && !command.isMessageInteraction()) {
 				return;
 			}
 			if(unit != null) {
