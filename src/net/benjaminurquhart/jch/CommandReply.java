@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.requests.FluentRestAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateRequest;
+import net.dv8tion.jda.api.utils.messages.MessagePollData;
 
 public class CommandReply implements FluentRestAction<Object, CommandReply>, MessageCreateRequest<CommandReply> {
 
@@ -191,6 +192,29 @@ public class CommandReply implements FluentRestAction<Object, CommandReply>, Mes
 	@Override
 	public CommandReply setCheck(BooleanSupplier checks) {
 		((FluentRestAction<?,?>)request).setCheck(checks);
+		return this;
+	}
+
+	@Override
+	public MessagePollData getPoll() {
+		return request.getPoll();
+	}
+
+	@Override
+	public CommandReply setPoll(MessagePollData poll) {
+		request.setPoll(poll);
+		return this;
+	}
+
+	@Override
+	public CommandReply setSuppressedNotifications(boolean suppressed) {
+		request.setSuppressedNotifications(suppressed);
+		return this;
+	}
+
+	@Override
+	public CommandReply setVoiceMessage(boolean voiceMessage) {
+		request.setVoiceMessage(voiceMessage);
 		return this;
 	}
 

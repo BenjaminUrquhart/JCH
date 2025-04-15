@@ -3,8 +3,9 @@ package net.benjaminurquhart.jch;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -46,7 +47,7 @@ public class CommandEvent {
 		this.user = event.getUser().getId();
 		this.guild  = event.getGuild().getId();
 		this.channel = event.getChannel().getId();
-		this.messageString = event.getCommandPath();
+		this.messageString = event.getFullCommandName();
 	}
 	
 	protected CommandEvent(MessageContextInteractionEvent event) {
@@ -88,7 +89,7 @@ public class CommandEvent {
 		return jda.getGuildById(guild);
 	}
 	
-	public MessageChannel getChannel() {
+	public TextChannel getChannel() {
 		return jda.getTextChannelById(channel);
 	}
 	

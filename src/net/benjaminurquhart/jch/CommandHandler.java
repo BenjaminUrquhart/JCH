@@ -20,10 +20,12 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.ReadyEvent;
+
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
+
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 public class CommandHandler<T> extends ListenerAdapter {
@@ -130,7 +132,7 @@ public class CommandHandler<T> extends ListenerAdapter {
 				action.addCommands(Commands.slash(cmd, command.getDescription()));
 			}
 			else if(command.isMessageInteraction()) {
-				action.addCommands(Commands.message(cmd).setGuildOnly(command.getClass().getAnnotation(MessageInteraction.class).value()));
+				action.addCommands(Commands.message(cmd).setContexts(command.getClass().getAnnotation(MessageInteraction.class).value()));
 			}
 		}
 		action.addCommands(externalCommands);
